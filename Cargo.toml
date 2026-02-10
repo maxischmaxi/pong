@@ -1,0 +1,16 @@
+[package]
+name = "pong"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = { version = "0.29", features = ["crossterm"] }
+crossterm = { version = "0.28", features = ["event-stream"] }
+surge-ping = "0.8"
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+clap = { version = "4.5", features = ["derive"] }
+color-eyre = "0.6"
+dns-lookup = "2"
+rand = "0.8"
+futures = "0.3"
