@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 use std::time::Duration;
 
-use crossterm::event::{KeyEvent, MouseEvent};
+use crossterm::event::KeyEvent;
 use ratatui::style::Color;
 
 /// Result of a single ping attempt.
@@ -37,7 +37,7 @@ pub enum HostStatus {
 }
 
 impl HostStatus {
-    pub fn symbol(&self) -> &'static str {
+    pub fn symbol(self) -> &'static str {
         match self {
             HostStatus::Up => "▲ Up",
             HostStatus::Elevated => "▲ Elevated",
@@ -46,7 +46,7 @@ impl HostStatus {
         }
     }
 
-    pub fn color(&self) -> Color {
+    pub fn color(self) -> Color {
         match self {
             HostStatus::Up => Color::Green,
             HostStatus::Elevated => Color::Yellow,
@@ -61,8 +61,7 @@ impl HostStatus {
 pub enum AppEvent {
     Ping(PingResult),
     Key(KeyEvent),
-    Mouse(MouseEvent),
-    Resize(u16, u16),
+    Resize,
     Tick,
     /// A host finished all pings (count reached).
     HostDone(usize),

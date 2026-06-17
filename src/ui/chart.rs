@@ -103,7 +103,7 @@ fn y_axis_labels(max: f64) -> Vec<Span<'static>> {
     let steps = 4;
     (0..=steps)
         .map(|i| {
-            let val = max * i as f64 / steps as f64;
+            let val = max * f64::from(i) / f64::from(steps);
             Span::styled(
                 format!("{val:.0}"),
                 Style::default().fg(Color::DarkGray),

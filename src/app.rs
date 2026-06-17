@@ -18,8 +18,8 @@ pub struct App {
     pub selected_host: usize,
     pub start_time: Instant,
     pub zoom: f64,
-    pub graph_history: usize,
     pub should_quit: bool,
+    pub quit_after: Option<Instant>,
     pub hosts_done: Vec<bool>,
     pub total_sent: u64,
     pub total_received: u64,
@@ -34,8 +34,8 @@ impl App {
             selected_host: 0,
             start_time: Instant::now(),
             zoom: 1.0,
-            graph_history,
             should_quit: false,
+            quit_after: None,
             hosts_done: vec![false; n],
             total_sent: 0,
             total_received: 0,
@@ -81,7 +81,7 @@ impl App {
                             break;
                         }
                     }
-                    _ = tick_cancel.cancelled() => break,
+                    () = tick_cancel.cancelled() => break,
                 }
             }
         });
@@ -109,26 +109,28 @@ impl App {
                     }
                 }
                 AppEvent::Key(key) => {
-                    self.handle_key(key, &cancel);
+                    self.handle_key(key);
                 }
                 AppEvent::Tick => {
+                    if let Some(quit_at) = self.quit_after {
+                        if Instant::now() >= quit_at {
+                            self.should_quit = true;
+                        }
+                    }
                     terminal.draw(|frame| ui::draw(frame, self))?;
                 }
-                AppEvent::Resize(_, _) => {
+                AppEvent::Resize => {
                     terminal.draw(|frame| ui::draw(frame, self))?;
                 }
                 AppEvent::HostDone(idx) => {
                     if idx < self.hosts_done.len() {
                         self.hosts_done[idx] = true;
                     }
-                    // If all hosts done, quit
+                    // If all hosts done, schedule quit after a brief delay
                     if self.hosts_done.iter().all(|d| *d) {
-                        // Give a moment for the last draw
-                        tokio::time::sleep(Duration::from_millis(500)).await;
-                        self.should_quit = true;
+                        self.quit_after = Some(Instant::now() + Duration::from_millis(500));
                     }
                 }
-                AppEvent::Mouse(_) => {}
             }
 
             if self.should_quit {
@@ -140,7 +142,7 @@ impl App {
         Ok(())
     }
 
-    fn handle_key(&mut self, key: KeyEvent, _cancel: &CancellationToken) {
+    fn handle_key(&mut self, key: KeyEvent) {
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => {
                 self.should_quit = true;
@@ -170,7 +172,7 @@ impl App {
                 self.total_received = 0;
                 self.start_time = std::time::Instant::now();
             }
-            KeyCode::Char('+') | KeyCode::Char('=') => {
+            KeyCode::Char('+' | '=') => {
                 self.zoom = (self.zoom * 0.8).max(0.1);
             }
             KeyCode::Char('-') => {

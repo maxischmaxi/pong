@@ -1,3 +1,6 @@
+#![warn(clippy::pedantic)]
+#![allow(clippy::cast_precision_loss)]
+
 mod app;
 mod cli;
 mod event;
@@ -10,11 +13,6 @@ use std::net::{IpAddr, ToSocketAddrs};
 
 use clap::Parser;
 use color_eyre::eyre::bail;
-use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
-use crossterm::execute;
-use crossterm::terminal::{
-    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
-};
 use dns_lookup::lookup_host;
 use tokio_util::sync::CancellationToken;
 
@@ -22,22 +20,37 @@ use crate::app::App;
 use crate::cli::Cli;
 use crate::types::{HostInfo, HOST_COLORS};
 
+/// RAII guard that restores the terminal on drop — even if the app panics.
+struct TerminalGuard;
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        ratatui::restore();
+    }
+}
+
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
 
+    // Validate arguments
+    if cli.interval < 0.0 {
+        bail!("interval must be non-negative");
+    }
+    if cli.timeout < 0.0 {
+        bail!("timeout must be non-negative");
+    }
+
     // Resolve hosts
-    let hosts = resolve_hosts(&cli)?;
+    let hosts = resolve_hosts(&cli);
     if hosts.is_empty() {
         bail!("No hosts could be resolved");
     }
 
-    // Setup terminal
-    enable_raw_mode()?;
-    let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    // Setup terminal — ratatui::init handles raw mode + alternate screen
     let mut terminal = ratatui::init();
+    let _guard = TerminalGuard;
 
     let cancel = CancellationToken::new();
 
@@ -51,19 +64,11 @@ async fn main() -> color_eyre::Result<()> {
     let mut app = App::new(hosts, cli.graph_history);
     let result = app.run(&mut terminal, &cli, cancel).await;
 
-    // Restore terminal
-    disable_raw_mode()?;
-    execute!(
-        std::io::stdout(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    ratatui::restore();
-
+    // _guard restores the terminal here (also on panic)
     result
 }
 
-fn resolve_hosts(cli: &Cli) -> color_eyre::Result<Vec<HostInfo>> {
+fn resolve_hosts(cli: &Cli) -> Vec<HostInfo> {
     let mut hosts = Vec::new();
 
     for (i, name) in cli.hosts.iter().enumerate() {
@@ -116,7 +121,7 @@ fn resolve_hosts(cli: &Cli) -> color_eyre::Result<Vec<HostInfo>> {
         }
     }
 
-    Ok(hosts)
+    hosts
 }
 
 fn should_use_ip(ip: IpAddr, cli: &Cli) -> bool {

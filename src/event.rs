@@ -11,7 +11,7 @@ pub fn spawn_event_reader(tx: mpsc::UnboundedSender<AppEvent>, cancel: Cancellat
         let mut reader = EventStream::new();
         loop {
             tokio::select! {
-                _ = cancel.cancelled() => break,
+                () = cancel.cancelled() => break,
                 event = reader.next() => {
                     match event {
                         Some(Ok(Event::Key(key))) => {
@@ -19,13 +19,8 @@ pub fn spawn_event_reader(tx: mpsc::UnboundedSender<AppEvent>, cancel: Cancellat
                                 break;
                             }
                         }
-                        Some(Ok(Event::Mouse(mouse))) => {
-                            if tx.send(AppEvent::Mouse(mouse)).is_err() {
-                                break;
-                            }
-                        }
-                        Some(Ok(Event::Resize(w, h))) => {
-                            if tx.send(AppEvent::Resize(w, h)).is_err() {
+                        Some(Ok(Event::Resize(_, _))) => {
+                            if tx.send(AppEvent::Resize).is_err() {
                                 break;
                             }
                         }

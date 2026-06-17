@@ -41,9 +41,12 @@ pong -I eth0 google.com               # bind to interface
 
 | Key                 | Action              |
 | ------------------- | ------------------- |
-| `q` / `Esc`         | Quit                |
+| `q` / `Esc` / `Ctrl+C` | Quit             |
 | `Tab` / `Shift+Tab` | Cycle through hosts |
 | `↑` / `↓`           | Select host         |
+| `j` / `k`           | Select host (vim)   |
+| `r`                 | Reset stats         |
+| `+` / `-`           | Zoom in/out chart   |
 
 ## Permissions
 

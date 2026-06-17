@@ -19,7 +19,7 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect) {
         ),
         Span::styled(" ▏ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
-            format!("{host_count} host{}", if host_count != 1 { "s" } else { "" }),
+            format!("{host_count} host{}", if host_count == 1 { "" } else { "s" }),
             Style::default().fg(Color::White),
         ),
         Span::styled(" ▏ ", Style::default().fg(Color::DarkGray)),

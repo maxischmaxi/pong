@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="maxischmaxi/ping"
+REPO="maxischmaxi/pong"
 BINARY="pong"
 INSTALL_DIR="/usr/local/bin"
 

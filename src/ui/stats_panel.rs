@@ -63,6 +63,10 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect) {
             "Status:",
             stat.status().symbol().to_string(),
         ),
+        fmt(
+            "Last Error:",
+            stat.last_error.clone().unwrap_or_else(|| "---".to_string()),
+        ),
     ];
 
     let paragraph = Paragraph::new(lines);

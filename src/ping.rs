@@ -61,6 +61,7 @@ async fn run_ping(
 
     let payload = vec![0xAA; config.payload_size];
     let mut seq: u16 = 0;
+    let mut sent_count: u64 = 0;
 
     loop {
         if cancel.is_cancelled() {
@@ -68,7 +69,7 @@ async fn run_ping(
         }
 
         if let Some(count) = config.count {
-            if seq as u64 >= count {
+            if sent_count >= count {
                 let _ = tx.send(AppEvent::HostDone(config.host_index));
                 break;
             }
@@ -90,11 +91,12 @@ async fn run_ping(
             break;
         }
 
+        sent_count += 1;
         seq = seq.wrapping_add(1);
 
         tokio::select! {
-            _ = tokio::time::sleep(config.interval) => {}
-            _ = cancel.cancelled() => break,
+            () = tokio::time::sleep(config.interval) => {}
+            () = cancel.cancelled() => break,
         }
     }
 
